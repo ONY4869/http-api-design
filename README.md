@@ -15,7 +15,7 @@
 ## 内容
 
 * [基础](#foundations)
-  *  [需要TLS](#require-tls)
+  *  [要求使用TLS](#require-tls)
   *  [添加版本到Accepts头部](#version-with-accepts-header)
   *  [用Etags支持缓存](#support-caching-with-etags)
   *  [用ID跟踪请求](#trace-requests-with-request-ids)
@@ -43,3 +43,33 @@
   *  [描述API稳定性](#describe-stability)
 
 ### Foundations
+
+#### Require TLS
+
+要求使用TLS(传输层安全协议)才能访问API，没有任何例外，试图找出或解释什么时候该用TLS，什么时候不该用TLS是没必要的。用上就对了。
+
+理论上，对于http或者80端口非TLS请求，简单的拒绝它们，不用返回数据，避免不安全的数据交换。对于那些不允许这么做的环境, 返回 `403 Forbidden`吧。
+
+不鼓励使用重定向因为这会允许不好的客户端行为，且不提供任何收益(译者注：吃力不讨好)。重定向的客户端不仅增加了服务端的压力，而且使得TLS无效，因为敏感数据可能已经在第一次请求中就泄露了。
+
+#### Version with Accepts header
+
+从一开始就版本化API. 使用`Accepts`头部独立一个自定义的内容类型来显示版本，例如：
+
+```
+Accept: application/vnd.heroku+json; version=3
+```
+
+最好是不要使用默认版本，取而代之的是让客户端使用一个确切的版本号来明确他们的用途。
+
+#### Support caching with Etags
+
+在所有的返回中包含一个`ETag`头部，用于标识返回资源的特定版本。这样用户就可以通过在`If-None-Match`头部提供的这些值来检查他们后续的请求是否过时。
+
+#### Trace requests with Request-Ids
+
+在每个API返回中包含一个用UUID值生成的`Request-Id`头部。如果服务端和客户端都记录这些值，这将帮助我们追踪和调试请求信息。
+
+#### Paginate with Ranges
+
+对于大数据返回分页是有必要的，使用`Content-Range`头部来表达分页请求，想知道请求和返回头部，状态码，限制，排序和页码使用的更多详情，请参考[Heroku Platform API on Ranges](https://devcenter.heroku.com/articles/platform-api-reference#ranges)的示例。
